@@ -6,14 +6,12 @@ module.exports = function() {
             return;
         }
         const item1 = new TodoItem({
-            title: 'First',
-            content: 'todo item #1',
-            isDone: false
+            title: 'First Item',
+            completed: false
         });
         const item2 = new TodoItem({
-            title: 'Second',
-            content: 'todo item #2',
-            isDone: true
+            title: 'Second Item',
+            completed: true
         });
 
         TodoItem.create([item1, item2], (error) => {

@@ -3,9 +3,13 @@
 var TodoItem = require("../models/todoItem");
 
 module.exports = {
+    load: function(req, res) {
+        TodoItem.find({}, function(err, result) {
+            res.json(result);
+        })
+    },
 
     create: function(req, res) {
-        console.log("req.body", req.body);
         var item = new TodoItem(req.body);
         item.save(function(err, result) {
             res.json(result);
@@ -13,23 +17,17 @@ module.exports = {
     },
 
     update: function(req, res) {
-        TodoItem.findById({
-            "title": req.params.title
-        }, function(err, result) {
+        TodoItem.findById(req.params.id, function(err, result) {
             console.log("req.body", req.body);
-            res.status(204).send();
-            /*result.remove(function(err) {
+            result.title = req.body.title;
+            result.completed = req.body.completed;
+
+            result.save(function(err) {
                 if (err) {
                     res.send(err);
                 }
                 res.status(204).send();
-            })*/
-        })
-    },
-
-    load: function(req, res) {
-        TodoItem.find({}, function(err, result) {
-            res.json(result);
+            });
         })
     },
 

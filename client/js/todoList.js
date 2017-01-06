@@ -1,44 +1,8 @@
-// Full spec-compliant TodoMVC with localStorage persistence
-// and hash-based routing in ~120 effective lines of JavaScript.
-
-// localStorage persistence
-var STORAGE_KEY = 'todos-vuejs-2.0'
-var todoStorage = {
-    fetch: function() {
-        var todos = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]')
-        todos.forEach(function(todo, index) {
-            todo.id = index
-        })
-        todoStorage.uid = todos.length
-        return todos
-    },
-    save: function(todos) {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(todos))
-    }
-}
-
-// visibility filters
-var filters = {
-    all: function(todos) {
-        return todos
-    },
-    active: function(todos) {
-        return todos.filter(function(todo) {
-            return !todo.completed
-        })
-    },
-    completed: function(todos) {
-        return todos.filter(function(todo) {
-            return todo.completed
-        })
-    }
-}
-
 // app Vue instance
 var app = new Vue({
     // app initial state
     data: {
-        todos: todoStorage.fetch(),
+        todos: [],
         newTodo: '',
         editedTodo: null,
         visibility: 'all'
@@ -47,21 +11,28 @@ var app = new Vue({
     // watch todos change for localStorage persistence
     watch: {
         todos: {
-            handler: function(todos) {
-                todoStorage.save(todos)
-            },
+            handler: function(todos) {},
             deep: true
         }
+    },
+
+    created: function() {
+        var self = this;
+        todoRepository.loadAll().then(function(response) {
+            self.todos = response.data;
+        });
     },
 
     // computed properties
     // http://vuejs.org/guide/computed.html
     computed: {
         filteredTodos: function() {
-            return filters[this.visibility](this.todos)
+            return this.todos.length === 0 ? [] :
+                filters[this.visibility](this.todos);
         },
         remaining: function() {
-            return filters.active(this.todos).length
+            return this.todos.length === 0 ? 0 :
+                filters.active(this.todos).length
         },
         allDone: {
             get: function() {
@@ -77,7 +48,7 @@ var app = new Vue({
 
     filters: {
         pluralize: function(n) {
-            return n === 1 ? 'item' : 'items'
+            return n === 1 ? 'item' : 'items';
         }
     },
 
@@ -85,45 +56,66 @@ var app = new Vue({
     // note there's no DOM manipulation here at all.
     methods: {
         addTodo: function() {
-            var value = this.newTodo && this.newTodo.trim()
+            var _this = this,
+                value = _this.newTodo && _this.newTodo.trim();
+
             if (!value) {
-                return
+                return;
             }
-            this.todos.push({
-                id: todoStorage.uid++,
+
+            todoRepository.createTodoItem({
                 title: value,
                 completed: false
-            })
-            this.newTodo = ''
+            }).then(function(result) {
+                _this.todos.push(result.data);
+            });
+            _this.newTodo = '';
         },
 
         removeTodo: function(todo) {
-            this.todos.splice(this.todos.indexOf(todo), 1)
+            var _this = this;
+
+            todoRepository.deleteTodoItem(todo).then(function() {
+                _this.todos.splice(_this.todos.indexOf(todo), 1);
+            });
         },
 
         editTodo: function(todo) {
-            this.beforeEditCache = todo.title
-            this.editedTodo = todo
+            this.beforeEditCache = todo.title;
+            this.editedTodo = todo;
         },
 
         doneEdit: function(todo) {
-            if (!this.editedTodo) {
-                return
+            var _this = this;
+
+            if (!_this.editedTodo) {
+                return;
             }
-            this.editedTodo = null
-            todo.title = todo.title.trim()
-            if (!todo.title) {
-                this.removeTodo(todo)
-            }
+
+            todoRepository.updateTodoItem(todo).then(function() {
+                _this.editedTodo = null;
+                todo.title = todo.title.trim();
+                if (!todo.title) {
+                    _this.removeTodo(todo);
+                };
+            });
         },
 
         cancelEdit: function(todo) {
-            this.editedTodo = null
-            todo.title = this.beforeEditCache
+            this.editedTodo = null;
+            todo.title = this.beforeEditCache;
         },
 
         removeCompleted: function() {
-            this.todos = filters.active(this.todos)
+            //This is not going to BE for now
+            this.todos = filters.active(this.todos);
+        },
+
+        updateCompleted: function(todo) {
+            todo.completed = !todo.completed;
+            todoRepository.updateTodoItem(todo).then(function() {
+                console.log("completed status changed for", todo._id);
+            });
         }
     },
 
@@ -133,25 +125,27 @@ var app = new Vue({
     directives: {
         'todo-focus': function(el, value) {
             if (value) {
-                el.focus()
+                el.focus();
             }
         }
     }
 })
 
-// handle routing
-function onHashChange() {
-    var visibility = window.location.hash.replace(/#\/?/, '')
-    if (filters[visibility]) {
-        app.visibility = visibility
-    } else {
-        window.location.hash = ''
-        app.visibility = 'all'
+$(document).ready(function() {
+    // handle routing
+    function onHashChange() {
+        var visibility = window.location.hash.replace(/#\/?/, '')
+        if (filters[visibility]) {
+            app.visibility = visibility
+        } else {
+            window.location.hash = ''
+            app.visibility = 'all'
+        }
     }
-}
 
-window.addEventListener('hashchange', onHashChange)
-onHashChange()
+    window.addEventListener('hashchange', onHashChange);
+    onHashChange();
 
-// mount
-app.$mount('.todoapp')
+    // mount
+    app.$mount('.todoapp');
+});

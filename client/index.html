@@ -2,14 +2,17 @@
   <head>
     <meta http-equiv="content-type" content="text/html; charset=UTF-8">   
     <link rel="stylesheet" type="text/css" href="https://unpkg.com/todomvc-app-css@2.0.6/index.css">
-    <script type="text/javascript" src="https://unpkg.com/vue@latest/dist/vue.js"></script>    
+    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+    <script type="text/javascript" src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <script type="text/javascript" src="https://unpkg.com/vue@latest/dist/vue.js"></script>  
+  
     <title>Todo List</title>
   </head>
 
   <body>
     <section class="todoapp">
     <header class="header">
-      <h1>todos</h1>
+      <h1>Todo List</h1>
       <input class="new-todo"
         autofocus autocomplete="off"
         placeholder="What needs to be done?"
@@ -24,7 +27,7 @@
           :key="todo.id"
           :class="{ completed: todo.completed, editing: todo == editedTodo }">
           <div class="view">
-            <input class="toggle" type="checkbox" v-model="todo.completed">
+            <input class="toggle" type="checkbox" v-model="todo.completed" v-on:click="updateCompleted(todo)">
             <label @dblclick="editTodo(todo)">{{ todo.title }}</label>
             <button class="destroy" @click="removeTodo(todo)"></button>
           </div>
@@ -56,7 +59,7 @@
       <p>Written by <a href="http://evanyou.me">Evan You</a></p>
       <p>Part of <a href="http://todomvc.com">TodoMVC</a></p>
     </footer>
-
+    <script type="text/javascript" src="./js/todoRepository.js"></script> 
     <script type="text/javascript" src="./js/todoList.js"></script>
   </body>
 </html>

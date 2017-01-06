@@ -4,8 +4,7 @@ var mongoose = require("mongoose");
 
 module.exports = mongoose.model("TodoItem", {
     title: String,
-    content: String,
-    isDone: {
+    completed: {
         type: Boolean,
         default: false
     }
